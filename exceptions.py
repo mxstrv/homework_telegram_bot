@@ -1,6 +1,6 @@
 class ServerNotAvailable(Exception):
-    pass
+    """Сервер Яндекс API недоступен."""
 
 
 class TokensNotAvailable(Exception):
-    pass
+    """Необходимые токены отсутствуют в окружении."""

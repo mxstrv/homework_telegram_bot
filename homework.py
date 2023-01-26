@@ -1,23 +1,24 @@
-import requests
 import os
-import telegram
-import time
-import logging
 import sys
-import exceptions
+import logging
+import time
 
+import requests
+import telegram
 from dotenv import load_dotenv
 from http import HTTPStatus
 
+import exceptions
 
 load_dotenv()
 
-PRACTICUM_TOKEN = os.getenv('YA_TOKEN')
+PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+TOKENS_TUPLE = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
 
 RETRY_PERIOD = 600
-ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+YA_API_ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 HOMEWORK_VERDICTS = {
@@ -31,37 +32,48 @@ logging.basicConfig(
     format='%(asctime)s [%(levelname)s] - %(message)s',
     level=logging.DEBUG,
 )
-logging.StreamHandler(stream=sys.stdout)
+logger = logging.getLogger('__name__')
+handler = logging.StreamHandler(stream=sys.stdout)
+logger.addHandler(handler)
 
 
 def check_tokens():
     """Проверяет доступны ли токены в окружении."""
-    if not PRACTICUM_TOKEN or not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+    if not all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)):
+        # При использовании if not all(TOKENS_TUPLE) не проходится pytest
         logging.critical('Токены отсутствуют')
         raise exceptions.TokensNotAvailable
     logging.debug('Токены найдены')
 
 
-def send_message(bot, message):
+def send_message(bot: telegram.Bot, message: str):
     """Отправляет сообщение в телеграм о статусе работы."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logging.debug(f'Бот отправил сообщение: {message}')
-    except Exception as error:
-        logging.error(error)
+    except telegram.error.TelegramError as tg_error:
+        logging.error(f'Ошибка с функционированием Телеграма: {tg_error}')
+    except TypeError:
+        logging.error('В функцию send_message'
+                      ' передан несоответствующий тип данных')
 
 
-def get_api_answer(timestamp):
+def get_api_answer(timestamp: int):
     """Отправляет запрос к API Яндекс.Практикума."""
     try:
         request = requests.get(
-            ENDPOINT,
+            YA_API_ENDPOINT,
             headers=HEADERS,
             params={'from_date': timestamp})
         if request.status_code == HTTPStatus.OK:
             request = request.json()
             logging.debug('Запрос к API Яндекса выполнен успешно')
             return request
+        # Как вынести его из блока try? except request.status_code != 200?
+        # pytest требует четкой проверки на отличие статуса ответа от 200,
+        # но чтобы сделать его отдельным блоком надо ведь и переменную request
+        # из блока try вынести, как лучше это оформить? вынести переменную в
+        # scope функции?
         else:
             logging.error('Сервер Яндекс API недоступен')
             raise exceptions.ServerNotAvailable
@@ -70,7 +82,7 @@ def get_api_answer(timestamp):
         raise Exception(error)
 
 
-def check_response(response):
+def check_response(response: dict) -> list:
     """Проверяет соответствие ответа API Яндекса ожиданиям."""
     if 'homeworks' not in response:
         logging.error('В response отсутствует ключ homeworks)')
@@ -86,7 +98,7 @@ def check_response(response):
     return response['homeworks']
 
 
-def parse_status(homework):
+def parse_status(homework: dict) -> str:
     """Возвращает статус проверки домашней работы."""
     if 'homework_name' not in homework.keys():
         logging.error('В ответе API отсутствует ключ homework_name')

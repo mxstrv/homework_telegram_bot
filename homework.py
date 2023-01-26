@@ -18,7 +18,10 @@ TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 TOKENS_TUPLE = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
 
 RETRY_PERIOD = 600
-YA_API_ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
+# AssertionError: Не найдена переменная `ENDPOINT.
+# Не удаляйте и не переименовывайте ее.
+# Не дают другой нейминг использовать.
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 HOMEWORK_VERDICTS = {
@@ -62,7 +65,7 @@ def get_api_answer(timestamp: int):
     """Отправляет запрос к API Яндекс.Практикума."""
     try:
         request = requests.get(
-            YA_API_ENDPOINT,
+            ENDPOINT,
             headers=HEADERS,
             params={'from_date': timestamp})
         if request.status_code == HTTPStatus.OK:

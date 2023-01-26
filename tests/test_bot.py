@@ -45,7 +45,7 @@ class TestHomework:
     ENV_VARS = ['PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID']
     HOMEWORK_CONSTANTS = ('PRACTICUM_TOKEN', 'TELEGRAM_TOKEN',
                           'TELEGRAM_CHAT_ID', 'RETRY_PERIOD',
-                          'YA_API_ENDPOINT', 'HEADERS', 'HOMEWORK_VERDICTS')
+                          'ENDPOINT', 'HEADERS', 'HOMEWORK_VERDICTS')
     HOMEWORK_FUNC_WITH_PARAMS_QTY = {
         'send_message': 2,
         'get_api_answer': 1,

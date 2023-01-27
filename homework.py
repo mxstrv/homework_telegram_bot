@@ -15,13 +15,9 @@ load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-TOKENS_TUPLE = (PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
 
 RETRY_PERIOD = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-# AssertionError: Не найдена переменная `ENDPOINT.
-# Не удаляйте и не переименовывайте ее.
-# Не дают другой нейминг использовать.
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
 
 HOMEWORK_VERDICTS = {
@@ -40,16 +36,15 @@ handler = logging.StreamHandler(stream=sys.stdout)
 logger.addHandler(handler)
 
 
-def check_tokens():
+def check_tokens() -> None:
     """Проверяет доступны ли токены в окружении."""
     if not all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)):
-        # При использовании if not all(TOKENS_TUPLE) не проходится pytest
         logging.critical('Токены отсутствуют')
         raise exceptions.TokensNotAvailable
     logging.debug('Токены найдены')
 
 
-def send_message(bot: telegram.Bot, message: str):
+def send_message(bot: telegram.Bot, message: str) -> None:
     """Отправляет сообщение в телеграм о статусе работы."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
@@ -61,28 +56,21 @@ def send_message(bot: telegram.Bot, message: str):
                       ' передан несоответствующий тип данных')
 
 
-def get_api_answer(timestamp: int):
+def get_api_answer(timestamp: int) -> dict:
     """Отправляет запрос к API Яндекс.Практикума."""
     try:
         request = requests.get(
             ENDPOINT,
             headers=HEADERS,
             params={'from_date': timestamp})
-        if request.status_code == HTTPStatus.OK:
-            request = request.json()
-            logging.debug('Запрос к API Яндекса выполнен успешно')
-            return request
-        # Как вынести его из блока try? except request.status_code != 200?
-        # pytest требует четкой проверки на отличие статуса ответа от 200,
-        # но чтобы сделать его отдельным блоком надо ведь и переменную request
-        # из блока try вынести, как лучше это оформить? вынести переменную в
-        # scope функции?
-        else:
-            logging.error('Сервер Яндекс API недоступен')
-            raise exceptions.ServerNotAvailable
     except requests.exceptions.RequestException as error:
         logging.error('Ошибка с запросом к Яндекс API')
         raise Exception(error)
+    if request.status_code == HTTPStatus.OK:
+        logging.debug('Запрос к API Яндекса выполнен успешно')
+        return request.json()
+    logging.error('Сервер Яндекс API недоступен')
+    raise exceptions.ServerNotAvailable
 
 
 def check_response(response: dict) -> list:
@@ -118,7 +106,7 @@ def parse_status(homework: dict) -> str:
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
-def main():
+def main() -> None:
     """Основная логика работы бота."""
     check_tokens()
 

@@ -12,8 +12,11 @@
 
 ## Установка
 Клонируем репозиторий командой `git clone git@github.com:mxstrv/homework_telegram_bot.git`
+
 Создаем и активируем виртуальное окружение командой `python3 -m venv venv && source/venv/bin/activate`
+
 Устанавливаем зависимости `pip install -r requirements.txt`
+
 Запускаем
 
 Данные токена хранятся в .env файле, необходимо создать данный файл и экспортировать туда данные.
